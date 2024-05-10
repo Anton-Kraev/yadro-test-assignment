@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"sort"
 	"time"
 )
 
@@ -28,12 +29,12 @@ func main() {
 	}(out)
 
 	var (
-		tablesCount, costPerHour       int
+		placesCount, costPerHour       int
 		openingTimeStr, closingTimeStr string
 	)
 
 	scanner.Scan()
-	if _, err := fmt.Sscanf(scanner.Text(), "%d", &tablesCount); err != nil {
+	if _, err := fmt.Sscanf(scanner.Text(), "%d", &placesCount); err != nil {
 		fmt.Println(scanner.Text())
 		return
 	}
@@ -56,18 +57,41 @@ func main() {
 		return
 	}
 
-	computerClub := NewComputerClub(tablesCount, costPerHour, openingTime, closingTime)
-	for scanner.Scan() { // TODO: check if time not sorted
+	computerClub := NewComputerClub(placesCount, costPerHour, openingTime, closingTime)
+	if _, err := fmt.Fprintf(out, "%02d:%02d\n", openingTime.Hour(), openingTime.Minute()); err != nil {
+		log.Fatalln(err)
+	}
+	for scanner.Scan() {
 		inputEvent := scanner.Text()
 		if _, err := fmt.Fprintln(out, inputEvent); err != nil {
 			log.Fatalln(err)
 		}
 
-		if outputEvent, err := computerClub.ProcessClientEvent(inputEvent); err != nil {
+		outputEvent, err := computerClub.ProcessClientEvent(inputEvent)
+		if err != nil {
 			out.Reset(nil)
 			fmt.Println(inputEvent)
 			return
-		} else if _, err := fmt.Fprintln(out, outputEvent); err != nil {
+		}
+		if outputEvent != "" {
+			if _, err := fmt.Fprintln(out, outputEvent); err != nil {
+				log.Fatalln(err)
+			}
+		}
+	}
+	for _, client := range computerClub.Close() {
+		if _, err := fmt.Fprintf(out, "%02d:%02d 11 %s\n", closingTime.Hour(), closingTime.Minute(), client); err != nil {
+			log.Fatalln(err)
+		}
+	}
+	if _, err := fmt.Fprintf(out, "%02d:%02d\n", closingTime.Hour(), closingTime.Minute()); err != nil {
+		log.Fatalln(err)
+	}
+	sort.Slice(computerClub.placeStats, func(i, j int) bool {
+		return computerClub.placeStats[i].id < computerClub.placeStats[j].id
+	})
+	for _, place := range computerClub.placeStats {
+		if _, err := fmt.Fprintf(out, "%d %d %02d:%02d\n", place.id, place.revenue*costPerHour, place.useTime.Hour(), place.useTime.Minute()); err != nil {
 			log.Fatalln(err)
 		}
 	}
