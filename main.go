@@ -27,15 +27,18 @@ func main() {
 		}
 	}(out)
 
+	var (
+		tablesCount, costPerHour       int
+		openingTimeStr, closingTimeStr string
+	)
+
 	scanner.Scan()
-	var tablesCount int
 	if _, err := fmt.Sscanf(scanner.Text(), "%d", &tablesCount); err != nil {
 		fmt.Println(scanner.Text())
 		return
 	}
 
 	scanner.Scan()
-	var openingTimeStr, closingTimeStr string
 	if _, err := fmt.Sscanf(scanner.Text(), "%s %s", &openingTimeStr, &closingTimeStr); err != nil {
 		fmt.Println(scanner.Text())
 		return
@@ -48,19 +51,24 @@ func main() {
 	}
 
 	scanner.Scan()
-	var costPerHour int
 	if _, err := fmt.Sscanf(scanner.Text(), "%d", &costPerHour); err != nil {
 		fmt.Println(scanner.Text())
 		return
 	}
 
-	for scanner.Scan() {
+	computerClub := NewComputerClub(tablesCount, costPerHour, openingTime, closingTime)
+	for scanner.Scan() { // TODO: check if time not sorted
 		inputEvent := scanner.Text()
-		_, err := fmt.Fprintln(out, inputEvent)
-		if err != nil {
+		if _, err := fmt.Fprintln(out, inputEvent); err != nil {
 			log.Fatalln(err)
 		}
-		//outputEvents, err := 0, new(error)
+
+		if outputEvent, err := computerClub.ProcessClientEvent(inputEvent); err != nil {
+			out.Reset(nil)
+			fmt.Println(inputEvent)
+			return
+		} else if _, err := fmt.Fprintln(out, outputEvent); err != nil {
+			log.Fatalln(err)
+		}
 	}
-	// out.Reset(os.Stdout)
 }
