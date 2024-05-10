@@ -43,29 +43,6 @@ func NewComputerClub(placesCount, costPerHour int, openingTime, closingTime t.Ti
 	}
 }
 
-func (club *ComputerClub) AcquirePlace(place int, client string, time t.Time) {
-	club.clientPlace[client] = place
-	club.placeStats[place-1].occupied = true
-	club.placeStats[place-1].occupiedTime = time
-}
-
-func (club *ComputerClub) ReleasePlace(place int, time t.Time) {
-	if place == 0 {
-		return
-	}
-	placeStats := &club.placeStats[place-1]
-	placeStats.useTime = placeStats.useTime.Add(time.Sub(placeStats.occupiedTime))
-	placeStats.revenue += int(math.Ceil(time.Sub(placeStats.occupiedTime).Hours()))
-	placeStats.occupiedTime, _ = t.Parse("15:04", "00:00")
-	placeStats.occupied = false
-}
-
-func (club *ComputerClub) ReleaseClientPlace(client string, time t.Time) {
-	place := club.clientPlace[client]
-	delete(club.clientPlace, client)
-	club.ReleasePlace(place, time)
-}
-
 func (club *ComputerClub) ProcessClientEvent(event string) (string, error) {
 	processingError := errors.New("bad event format")
 
@@ -118,10 +95,33 @@ func (club *ComputerClub) Close() []string {
 	var clientsInClub []string
 	for client := range club.clientPlace {
 		clientsInClub = append(clientsInClub, client)
-		club.ReleaseClientPlace(client, club.closingTime)
+		club.releaseClientPlace(client, club.closingTime)
 	}
 	sort.Strings(clientsInClub)
 	return clientsInClub
+}
+
+func (club *ComputerClub) acquirePlace(place int, client string, time t.Time) {
+	club.clientPlace[client] = place
+	club.placeStats[place-1].occupied = true
+	club.placeStats[place-1].occupiedTime = time
+}
+
+func (club *ComputerClub) releasePlace(place int, time t.Time) {
+	if place == 0 {
+		return
+	}
+	placeStats := &club.placeStats[place-1]
+	placeStats.useTime = placeStats.useTime.Add(time.Sub(placeStats.occupiedTime))
+	placeStats.revenue += int(math.Ceil(time.Sub(placeStats.occupiedTime).Hours()))
+	placeStats.occupiedTime, _ = t.Parse("15:04", "00:00")
+	placeStats.occupied = false
+}
+
+func (club *ComputerClub) releaseClientPlace(client string, time t.Time) {
+	place := club.clientPlace[client]
+	delete(club.clientPlace, client)
+	club.releasePlace(place, time)
 }
 
 func (club *ComputerClub) clientCame(time t.Time, clientName string) (string, error) {
@@ -148,8 +148,8 @@ func (club *ComputerClub) clientSat(time t.Time, clientName string, placeNumber 
 	if club.placeStats[placeNumber-1].occupied {
 		return fmt.Sprintf("%02d:%02d 13 PlaceIsBusy", time.Hour(), time.Minute()), nil
 	}
-	club.ReleasePlace(placeId, time)
-	club.AcquirePlace(placeNumber, clientName, time)
+	club.releasePlace(placeId, time)
+	club.acquirePlace(placeNumber, clientName, time)
 	return "", nil
 }
 
@@ -180,11 +180,11 @@ func (club *ComputerClub) clientLeft(time t.Time, clientName string) (string, er
 	if !inClub {
 		return fmt.Sprintf("%02d:%02d 13 ClientUnknown", time.Hour(), time.Minute()), nil
 	}
-	club.ReleaseClientPlace(clientName, time)
+	club.releaseClientPlace(clientName, time)
 	if len(club.queue) > 0 {
 		clientInQueue := club.queue[0]
 		club.queue = club.queue[1:]
-		club.AcquirePlace(placeId, clientInQueue, time)
+		club.acquirePlace(placeId, clientInQueue, time)
 		return fmt.Sprintf("%02d:%02d 12 %s %d", time.Hour(), time.Minute(), clientInQueue, placeId), nil
 	}
 	return "", nil
