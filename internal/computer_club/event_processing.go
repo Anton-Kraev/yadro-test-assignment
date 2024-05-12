@@ -1,4 +1,4 @@
-package main
+package computer_club
 
 import (
 	"bufio"

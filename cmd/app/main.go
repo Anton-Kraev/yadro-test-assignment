@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"os"
+	computerclub "yadro-test-assignment/internal/computer_club"
 )
 
 func main() {
@@ -15,5 +16,5 @@ func main() {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	ProcessComputerClubDayEvents(file, os.Stdout)
+	computerclub.ProcessComputerClubDayEvents(file, os.Stdout)
 }
