@@ -27,26 +27,34 @@ func ProcessComputerClubDayEvents(r io.Reader, w io.Writer) {
 	)
 
 	scanner.Scan()
-	if _, err := fmt.Sscanf(scanner.Text(), "%d", &placesCount); err != nil {
-		fmt.Println(scanner.Text())
+	if _, err := fmt.Sscanf(scanner.Text(), "%d", &placesCount); err != nil || placesCount <= 0 {
+		if _, err := fmt.Fprintln(w, scanner.Text()); err != nil {
+			log.Fatalln(err)
+		}
 		return
 	}
 
 	scanner.Scan()
 	if _, err := fmt.Sscanf(scanner.Text(), "%s %s", &openingTimeStr, &closingTimeStr); err != nil {
-		fmt.Println(scanner.Text())
+		if _, err := fmt.Fprintln(w, scanner.Text()); err != nil {
+			log.Fatalln(err)
+		}
 		return
 	}
 	openingTime, err1 := t.Parse("15:04", openingTimeStr)
 	closingTime, err2 := t.Parse("15:04", closingTimeStr)
 	if errors.Join(err1, err2) != nil || !closingTime.After(openingTime) {
-		fmt.Println(scanner.Text())
+		if _, err := fmt.Fprintln(w, scanner.Text()); err != nil {
+			log.Fatalln(err)
+		}
 		return
 	}
 
 	scanner.Scan()
-	if _, err := fmt.Sscanf(scanner.Text(), "%d", &costPerHour); err != nil {
-		fmt.Println(scanner.Text())
+	if _, err := fmt.Sscanf(scanner.Text(), "%d", &costPerHour); err != nil || costPerHour <= 0 {
+		if _, err := fmt.Fprintln(w, scanner.Text()); err != nil {
+			log.Fatalln(err)
+		}
 		return
 	}
 
@@ -64,7 +72,9 @@ func ProcessComputerClubDayEvents(r io.Reader, w io.Writer) {
 		outputEvent, err := processEvent(computerClub, inputEvent)
 		if err != nil {
 			out.Reset(nil)
-			fmt.Println(inputEvent)
+			if _, err := fmt.Fprintln(w, inputEvent); err != nil {
+				log.Fatalln(err)
+			}
 			return
 		}
 		if outputEvent != "" {

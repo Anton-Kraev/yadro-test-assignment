@@ -67,10 +67,14 @@ func (club *ComputerClub) ClientCame(time t.Time, clientName string) (string, er
 
 func (club *ComputerClub) ClientSat(time t.Time, clientName string, placeNumber int) (string, error) {
 	placeId, inClub := club.clientPlace[clientName]
-	if !inClub || time.Before(club.openingTime) || time.After(club.closingTime) {
+	if time.Before(club.openingTime) || time.After(club.closingTime) ||
+		placeNumber > club.placesCount || placeNumber < 1 {
 		return "", errors.New("failed to process the clientSat event")
 	}
 
+	if !inClub {
+		return fmt.Sprintf("%02d:%02d 13 ClientUnknown", time.Hour(), time.Minute()), nil
+	}
 	if club.placeStats[placeNumber-1].occupied {
 		return fmt.Sprintf("%02d:%02d 13 PlaceIsBusy", time.Hour(), time.Minute()), nil
 	}
@@ -91,6 +95,7 @@ func (club *ComputerClub) ClientWaiting(time t.Time, clientName string) (string,
 		}
 	}
 	if len(club.queue) >= len(club.placeStats) {
+		delete(club.clientPlace, clientName)
 		return fmt.Sprintf("%02d:%02d 11 %s", time.Hour(), time.Minute(), clientName), nil
 	}
 	club.queue = append(club.queue, clientName)
