@@ -4,47 +4,17 @@ import (
 	"bufio"
 	"bytes"
 	"errors"
+	"fmt"
 	"io"
 	"log"
 	"os"
+	"path/filepath"
+	"strings"
 	"testing"
 )
 
 func TestEventProcessing(t *testing.T) {
-	var testFiles = []struct {
-		input, expectedOutput, actualOutput string
-	}{
-		{"../../testdata/input1.txt",
-			"../../testdata/expected_output1.txt",
-			"../../testdata/actual_output1.txt"},
-		{"../../testdata/input2.txt",
-			"../../testdata/expected_output2.txt",
-			"../../testdata/actual_output2.txt"},
-		{"../../testdata/input3.txt",
-			"../../testdata/expected_output3.txt",
-			"../../testdata/actual_output3.txt"},
-		{"../../testdata/input4.txt",
-			"../../testdata/expected_output4.txt",
-			"../../testdata/actual_output4.txt"},
-		{"../../testdata/input5.txt",
-			"../../testdata/expected_output5.txt",
-			"../../testdata/actual_output5.txt"},
-		{"../../testdata/input6.txt",
-			"../../testdata/expected_output6.txt",
-			"../../testdata/actual_output6.txt"},
-		{"../../testdata/input7.txt",
-			"../../testdata/expected_output7.txt",
-			"../../testdata/actual_output7.txt"},
-		{"../../testdata/input8.txt",
-			"../../testdata/expected_output8.txt",
-			"../../testdata/actual_output8.txt"},
-		{"../../testdata/input9.txt",
-			"../../testdata/expected_output9.txt",
-			"../../testdata/actual_output9.txt"},
-		{"../../testdata/input10.txt",
-			"../../testdata/expected_output10.txt",
-			"../../testdata/actual_output10.txt"},
-	}
+	testFiles := getTestFiles("../../testdata")
 
 	for _, tf := range testFiles {
 		input, err1 := os.Open(tf.input)
@@ -77,6 +47,37 @@ func TestEventProcessing(t *testing.T) {
 			t.Logf("--- OK: Process events of %s\n", tf.input)
 		}
 	}
+}
+
+type testFile struct {
+	input, expectedOutput, actualOutput string
+}
+
+func getTestFiles(testdataDir string) []testFile {
+	var testFiles []testFile
+
+	err := filepath.Walk(testdataDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if !info.IsDir() {
+			base := filepath.Base(path)
+			if strings.HasPrefix(base, "input") && strings.HasSuffix(base, ".txt") {
+				id := strings.TrimSuffix(strings.TrimPrefix(base, "input"), ".txt")
+				testFiles = append(testFiles, testFile{
+					input:          path,
+					expectedOutput: filepath.Join(testdataDir, fmt.Sprintf("expected_output%s.txt", id)),
+					actualOutput:   filepath.Join(testdataDir, fmt.Sprintf("actual_output%s.txt", id)),
+				})
+			}
+		}
+		return nil
+	})
+
+	if err != nil {
+		log.Fatalln(err)
+	}
+	return testFiles
 }
 
 func fileCmp(fileExpected, fileActual io.Reader) (equal bool, lineN int, expected, actual string) {
