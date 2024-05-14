@@ -23,11 +23,12 @@ type ComputerClub struct {
 }
 
 func NewComputerClub(placesCount, costPerHour int, openingTime, closingTime t.Time) *ComputerClub {
-	placeStats := make([]ComputerPlace, placesCount)
 	zeroTime, _ := t.Parse("15:04", "00:00")
+	placeStats := make([]ComputerPlace, placesCount)
 	for i := 0; i < placesCount; i++ {
 		placeStats[i] = ComputerPlace{id: i + 1, occupiedTime: zeroTime, useTime: zeroTime}
 	}
+
 	return &ComputerClub{
 		placesCount:   placesCount,
 		costPerHour:   costPerHour,

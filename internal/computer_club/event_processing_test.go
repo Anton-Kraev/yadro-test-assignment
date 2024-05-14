@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -20,29 +19,23 @@ func TestEventProcessing(t *testing.T) {
 		input, err1 := os.Open(tf.input)
 		expectedOutput, err2 := os.Open(tf.expectedOutput)
 		actualOutput, err3 := os.Create(tf.actualOutput)
-		if err := errors.Join(err1, err2, err3); err != nil {
-			log.Fatalln(err)
-		}
+		checkFatal(errors.Join(err1, err2, err3))
 
 		ProcessComputerClubDayEvents(input, actualOutput)
-		if err := actualOutput.Close(); err != nil {
-			log.Fatalln(err)
-		}
 
+		checkFatal(actualOutput.Close())
 		actualOutput, err := os.Open(tf.actualOutput)
-		if err != nil {
-			log.Fatalln(err)
-		}
+		checkFatal(err)
 
 		equal, lineN, expectedLine, actualLine := fileCmp(expectedOutput, actualOutput)
 
-		if err := errors.Join(input.Close(), expectedOutput.Close(), actualOutput.Close(), os.Remove(tf.actualOutput)); err != nil {
-			log.Fatalln(err)
-		}
+		checkFatal(errors.Join(input.Close(), expectedOutput.Close(), actualOutput.Close(), os.Remove(tf.actualOutput)))
 
 		if !equal {
-			t.Errorf("Process events of %s: expected %s, got %s at line %d",
-				tf.input, expectedLine, actualLine, lineN)
+			t.Errorf(
+				"Process events of %s: expected %s, got %s at line %d",
+				tf.input, expectedLine, actualLine, lineN,
+			)
 		} else {
 			t.Logf("--- OK: Process events of %s\n", tf.input)
 		}
@@ -74,9 +67,7 @@ func getTestFiles(testdataDir string) []testFile {
 		return nil
 	})
 
-	if err != nil {
-		log.Fatalln(err)
-	}
+	checkFatal(err)
 	return testFiles
 }
 
