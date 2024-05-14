@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-	file, err := os.Open("input.txt")
+	file, err := os.Open(os.Args[1])
 	defer func(file *os.File) {
 		if err := file.Close(); err != nil {
 			log.Fatalln(err)
