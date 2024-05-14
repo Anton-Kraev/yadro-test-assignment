@@ -9,7 +9,7 @@ go test -v ./internal/computer_club
 ## Запуск приложения
 Запуск приложения из корня проекта
 ```shell
-go run ./cmd/app/main.go -file="input.txt"
+go run ./cmd/app/main.go input.txt
 ```
 Вместо **input.txt** может быть любой другой файл с входящими запросами
 
